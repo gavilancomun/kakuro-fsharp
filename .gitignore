@@ -1,0 +1,8 @@
+*.swp
+*~
+Bin/
+obj/
+*.suo
+target/
+TestResult.xml
+

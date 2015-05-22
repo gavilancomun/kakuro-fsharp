@@ -1,0 +1,22 @@
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <AssemblyName>kakuro</AssemblyName>
+    <OutputPath>Bin\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="**\*.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="Antlr4.Runtime" />
+    <Reference Include="NUnit.Framework" />
+  </ItemGroup>
+
+<Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
+<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
+
