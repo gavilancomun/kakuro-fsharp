@@ -106,7 +106,11 @@ let solvePairRow pair =
     match pair with
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        solveStep (vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Across).across) 
+        solveStep (vs |> List.map (fun x -> x :?> Value), 
+                   match Seq.last nvs with
+                   | :? Across as x -> x.across
+                   | :? DownAcross as x -> x.across
+                   | _ -> 0)
         |> List.map (fun x -> x :> IDraw)
     | _ -> []
 
@@ -114,7 +118,11 @@ let solvePairCol pair =
     match pair with
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        solveStep (vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Down).down) 
+        solveStep (vs |> List.map (fun x -> x :?> Value), 
+                   match Seq.last nvs with
+                   | :? Down as x -> x.down
+                   | :? DownAcross as x -> x.down
+                   | _ -> 0)
         |> List.map (fun x -> x :> IDraw)
     | _ -> []
 
@@ -161,9 +169,9 @@ let solveCol (col) =
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
     |> List.collect solveRow
-    //|> transpose
-    //|> List.collect solveCol
-    //|> transpose
+    |> transpose
+    |> List.collect solveCol
+    |> transpose
 
 let grid1 : List<List<IDraw>> = 
     [ [ e
