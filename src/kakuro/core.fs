@@ -157,14 +157,10 @@ let rec partitionAll (n, step, coll) =
                                  |> Seq.toList)
 
 let partitionN (n, coll) = partitionAll (n, n, coll)
-
-let solveRow (row) = 
-    let pairs = partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), row))
-    List.collect (fun p -> solvePairRow p) pairs
-
-let solveCol (col) = 
-    let pairs = partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), col))
-    List.collect (fun p -> solvePairCol p) pairs
+let solveRow row = 
+    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), row)) |> List.collect (fun p -> solvePairRow p)
+let solveCol col = 
+    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), col)) |> List.collect (fun p -> solvePairCol p)
 
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
