@@ -25,16 +25,19 @@ let da (down : int, across : int) = DownAcross(down, across)
 let e() = Empty()
 
 let drawRow(row: List<IDraw>) = 
-  List.iter (fun (x : IDraw) -> printf "%s" <| x.draw()) row
-  printfn "\n"
+  (row
+  |> List.map (fun x -> x.draw())
+  |> String.concat "") + "\n"
 
 let drawGrid(grid: List<List<IDraw>>) =
-  List.iter (fun (row: List<IDraw>) -> drawRow(row)) grid
+  grid
+  |> List.map (fun row -> drawRow(row))
+  |> String.concat ""
 
 [<EntryPoint>]
 let main argv = 
     let grid1 : List<List<IDraw>> = 
         [[ e(); d 1; a 2; da(3, 4) ]
          [ e(); d 1; a 2; da(3, 4) ]]
-    drawGrid grid1
+    printf "%s" <| drawGrid grid1
     0 // return an integer exit code
