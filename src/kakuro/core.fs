@@ -102,44 +102,68 @@ let solveStep (cells : List<Value>, total : int) =
     |> transpose
     |> List.map (fun p -> Value(set p))
 
-
 let solvePairRow pair = 
     match pair with
-    | [nvs; []] -> nvs
-    | [nvs: List<IDraw>; vs] -> solveStep(vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Across).across) |>  List.map (fun x -> x :> IDraw)
+    | [ nvs; [] ] -> nvs
+    | [ nvs : List<IDraw>; vs ] -> 
+        solveStep (vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Across).across) 
+        |> List.map (fun x -> x :> IDraw)
     | _ -> []
 
 let solvePairCol pair = 
     match pair with
-    | [nvs; []] -> nvs
-    | [nvs: List<IDraw>; vs] -> solveStep(vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Down).down) |>  List.map (fun x -> x :> IDraw)
+    | [ nvs; [] ] -> nvs
+    | [ nvs : List<IDraw>; vs ] -> 
+        solveStep (vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Down).down) 
+        |> List.map (fun x -> x :> IDraw)
     | _ -> []
 
-let rec partitionBy(f, coll) =
+let rec partitionBy (f, coll) = 
     match coll with
     | [] -> []
-    | x::xs -> 
-     let fx = f x
-     let run = x :: xs |> Seq.takeWhile (fun y -> fx = f y) |> Seq.toList
-     run :: partitionBy(f, (coll |> Seq.skip run.Length |> Seq.toList))
+    | x :: xs -> 
+        let fx = f x
+        
+        let run = 
+            x :: xs
+            |> Seq.takeWhile (fun y -> fx = f y)
+            |> Seq.toList
+        run :: partitionBy (f, 
+                            coll
+                            |> Seq.skip run.Length
+                            |> Seq.toList)
 
+let rec partitionAll (n, step, coll) = 
+    match coll with
+    | [] -> []
+    | x :: xs -> 
+        if coll.Length < n then [ coll ]
+        else 
+            let seg = 
+                coll
+                |> Seq.take n
+                |> Seq.toList
+            seg :: partitionAll (n, step, 
+                                 coll
+                                 |> Seq.skip step
+                                 |> Seq.toList)
 
+let partitionN (n, coll) = partitionAll (n, n, coll)
 
-let solveRow(row) =
-   let pairs = (partition-all 2 (partition-by #(= (type %) (type v)) row))]
-   List.collect (fun p -> solvePairRow p) pairs
+let solveRow (row) = 
+    let pairs = partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), row))
+    List.collect (fun p -> solvePairRow p) pairs
 
-let solveCol(col) =
-   let pairs = (partition-all 2 (partition-by #(= (type %) (type v)) col))]
-   List.collect (fun p -> solvePairCol p) pairs
+let solveCol (col) = 
+    let pairs = partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), col))
+    List.collect (fun p -> solvePairCol p) pairs
 
-   
-let solveGrid(grid: List<List<IDraw>>) =
-  grid 
-  |> List.collect solveRow
-  |> transpose
-  |> List.collect solveCol
-  |> transpose
+let solveGrid (grid : List<List<IDraw>>) = 
+    grid
+    |> List.collect solveRow
+    |> transpose
+    |> List.collect solveCol
+    |> transpose
 
 let grid1 : List<List<IDraw>> = 
     [ [ e
