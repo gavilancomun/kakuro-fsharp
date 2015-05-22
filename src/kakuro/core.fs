@@ -102,6 +102,45 @@ let solveStep (cells : List<Value>, total : int) =
     |> transpose
     |> List.map (fun p -> Value(set p))
 
+
+let solvePairRow pair = 
+    match pair with
+    | [nvs; []] -> nvs
+    | [nvs: List<IDraw>; vs] -> solveStep(vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Across).across) |>  List.map (fun x -> x :> IDraw)
+    | _ -> []
+
+let solvePairCol pair = 
+    match pair with
+    | [nvs; []] -> nvs
+    | [nvs: List<IDraw>; vs] -> solveStep(vs |> List.map (fun x -> x :?> Value), ((Seq.last (Seq.ofList nvs)) :?> Down).down) |>  List.map (fun x -> x :> IDraw)
+    | _ -> []
+
+let rec partitionBy(f, coll) =
+    match coll with
+    | [] -> []
+    | x::xs -> 
+     let fx = f x
+     let run = x :: xs |> Seq.takeWhile (fun y -> fx = f y) |> Seq.toList
+     run :: partitionBy(f, (coll |> Seq.skip run.Length |> Seq.toList))
+
+
+
+let solveRow(row) =
+   let pairs = (partition-all 2 (partition-by #(= (type %) (type v)) row))]
+   List.collect (fun p -> solvePairRow p) pairs
+
+let solveCol(col) =
+   let pairs = (partition-all 2 (partition-by #(= (type %) (type v)) col))]
+   List.collect (fun p -> solvePairCol p) pairs
+
+   
+let solveGrid(grid: List<List<IDraw>>) =
+  grid 
+  |> List.collect solveRow
+  |> transpose
+  |> List.collect solveCol
+  |> transpose
+
 let grid1 : List<List<IDraw>> = 
     [ [ e
         (d 4)
