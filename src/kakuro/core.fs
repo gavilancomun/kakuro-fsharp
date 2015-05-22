@@ -49,7 +49,7 @@ type Value(values : Set<int>) =
 let a (across : int) = Across(across)
 let d (down : int) = Down(down)
 let da (down : int, across : int) = DownAcross(down, across)
-let e() = Empty()
+let e = Empty()
 let v = Value(set [ 1..9 ])
 
 let drawRow (row : List<IDraw>) = 
@@ -102,18 +102,45 @@ let solveStep (cells : List<Value>, total : int) =
     |> transpose
     |> List.map (fun p -> Value(set p))
 
+let grid1 : List<List<IDraw>> = 
+    [ [ e
+        (d 4)
+        (d 22)
+        e
+        (d 16)
+        (d 3) ]
+      [ (a 3)
+        v
+        v
+        da (16, 6)
+        v
+        v ]
+      [ (a 18)
+        v
+        v
+        v
+        v
+        v ]
+      [ e
+        da (17, 23)
+        v
+        v
+        v
+        (d 14) ]
+      [ (a 9)
+        v
+        v
+        (a 6)
+        v
+        v ]
+      [ (a 15)
+        v
+        v
+        (a 12)
+        v
+        v ] ]
+
 [<EntryPoint>]
 let main argv = 
-    let grid1 : List<List<IDraw>> = 
-        [ [ e()
-            d 1
-            a 2
-            da (3, 4)
-            v ]
-          [ v
-            e()
-            d 1
-            a 2
-            da (3, 4) ] ]
     printf "%s" <| drawGrid grid1
     0 // return an integer exit code
