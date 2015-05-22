@@ -161,9 +161,9 @@ let solveCol (col) =
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
     |> List.collect solveRow
-    |> transpose
-    |> List.collect solveCol
-    |> transpose
+    //|> transpose
+    //|> List.collect solveCol
+    //|> transpose
 
 let grid1 : List<List<IDraw>> = 
     [ [ e
@@ -206,4 +206,5 @@ let grid1 : List<List<IDraw>> =
 [<EntryPoint>]
 let main argv = 
     printf "%s" <| drawGrid grid1
+    solveGrid grid1
     0 // return an integer exit code
