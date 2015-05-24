@@ -49,9 +49,9 @@ type Value(values : Set<int>) =
 
     override x.GetHashCode() = values.GetHashCode()
 
-let a (across : int) = Across(across)
-let d (down : int) = Down(down)
-let da (down : int, across : int) = DownAcross(down, across)
+let a across = Across(across)
+let d down = Down(down)
+let da down across = DownAcross(down, across)
 let e = Empty()
 let v = Value(set [ 1..9 ])
 
@@ -61,7 +61,7 @@ let drawRow (row : List<IDraw>) =
      |> String.concat "")
     + "\n"
 
-let drawGrid (grid : List<List<IDraw>>) = 
+let drawGrid grid = 
     "\n" + 
     (grid
     |> List.map (fun row -> drawRow (row))
@@ -69,17 +69,18 @@ let drawGrid (grid : List<List<IDraw>>) =
 
 let allDifferent (nums : List<int>) = (nums.Length = (set nums).Count)
 
-let rec permute (vs : List<Value>, target : int, soFar : List<int>) = 
+let rec permute (vs : List<Value>) target (soFar: List<int>) = 
     if target >= 1 then 
         if soFar.Length = (vs.Length - 1) then [ soFar @ [ target ] ]
         else 
             (List.nth vs soFar.Length).values
-            |> Seq.collect (fun v -> permute (vs, (target - v), (soFar @ [ v ])))
+            |> Seq.collect (fun v -> permute vs (target - v) (soFar @ [ v ]))
             |> List.ofSeq
     else []
 
-let permuteAll (vs : List<Value>, total : int) = permute (vs, total, [])
-let isPossible (cell : Value, n : int) = Set.contains n cell.values
+let permuteAll vs total = permute vs total []
+
+let isPossible (cell : Value) n = Set.contains n cell.values
 
 let rec transpose matrix = 
     match matrix with // matrix is a list<list<int>>
@@ -95,12 +96,11 @@ let rec transpose matrix =
         | _ -> []
     | _ -> []
 
-let solveStep (cells : List<Value>, total : int) = 
+let solveStep (cells : List<Value>) total = 
     let final = cells.Length - 1
-    
     let perms = 
-        permuteAll (cells, total)
-        |> List.filter (fun p -> isPossible ((List.nth cells final), (List.nth p final)))
+        permuteAll cells total
+        |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
         |> List.filter allDifferent
     perms
     |> transpose
@@ -111,8 +111,8 @@ let solvePairRow pair =
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value), 
-                   match Seq.last nvs with
+        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
+                   (match Seq.last nvs with
                    | :? Across as x -> x.across
                    | :? DownAcross as x -> x.across
                    | _ -> 0) |> List.map (fun x -> x :> IDraw))
@@ -123,8 +123,8 @@ let solvePairCol pair =
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value), 
-                   match Seq.last nvs with
+        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
+                   (match Seq.last nvs with
                    | :? Down as x -> x.down
                    | :? DownAcross as x -> x.down
                    | _ -> 0) |> List.map (fun x -> x :> IDraw))
@@ -146,22 +146,17 @@ let rec partitionBy f coll =
 let rec drop n coll =
   match coll with
   | [] -> []
-  | x::xs when (n <= 1) -> xs
-  | x::xs -> drop (n - 1) xs
+  | x :: xs when (n <= 1) -> xs
+  | x :: xs -> drop (n - 1) xs
 
-let rec partitionAll (n, step, coll) = 
+let rec partitionAll n step coll = 
     match coll with
     | [] -> []
     | x :: xs -> 
-            let seg = coll
-                      |> Seq.truncate n
-                      |> Seq.toList
-            seg :: partitionAll (n, step, 
-                                 coll
-                                 |> drop step
-                                 |> Seq.toList)
+            let seg = Seq.truncate n coll |> Seq.toList
+            seg :: partitionAll n step (coll |> drop step |> Seq.toList)
 
-let partitionN n coll = partitionAll (n, n, coll)
+let partitionN n coll = partitionAll n n coll
 
 let solveRow cells = 
     partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairRow
@@ -169,7 +164,7 @@ let solveRow cells =
 let solveCol cells = 
     partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairCol
 
-let solveGrid (grid : List<List<IDraw>>) = 
+let solveGrid grid = 
     grid
     |> List.map solveRow
     |> transpose
@@ -186,7 +181,7 @@ let grid1 : List<List<IDraw>> =
       [ (a 3)
         v
         v
-        da (16, 6)
+        (da 16 6)
         v
         v ]
       [ (a 18)
@@ -196,7 +191,7 @@ let grid1 : List<List<IDraw>> =
         v
         v ]
       [ e
-        da (17, 23)
+        (da 17 23)
         v
         v
         v
