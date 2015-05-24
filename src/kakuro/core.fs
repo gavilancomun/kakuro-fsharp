@@ -162,17 +162,13 @@ let rec partitionAll (n, step, coll) =
                                  |> drop step
                                  |> Seq.toList)
 
-let partitionN (n, coll) = partitionAll (n, n, coll)
+let partitionN n coll = partitionAll (n, n, coll)
 
 let solveRow cells = 
-    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), cells)) |> List.collect solvePairRow
+    partitionN 2 <| partitionBy ((fun (x : IDraw) -> x :? Value), cells) |> List.collect solvePairRow
 
 let solveCol cells = 
-    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), cells)) |> List.collect solvePairCol
-
-let peekRow(row) =
-    printf "%s" <| drawRow row
-    row
+    partitionN 2 <| partitionBy ((fun (x : IDraw) -> x :? Value), cells) |> List.collect solvePairCol
 
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
@@ -228,7 +224,7 @@ let rec solver grid =
     solver g
 
 [<EntryPoint>]
-let main argv = 
+let main _ = 
     grid1 
     |> solver
     |> drawGrid
