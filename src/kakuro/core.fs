@@ -161,10 +161,12 @@ let rec partitionAll (n, step, coll) =
                                  |> Seq.toList)
 
 let partitionN (n, coll) = partitionAll (n, n, coll)
-let solveRow row = 
-    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), row)) |> List.collect (fun p -> solvePairRow p)
-let solveCol col = 
-    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), col)) |> List.collect (fun p -> solvePairCol p)
+
+let solveRow cells = 
+    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), cells)) |> List.collect solvePairRow
+
+let solveCol cells = 
+    partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), cells)) |> List.collect solvePairCol
 
 let peekRow(row) =
     printf "%s" <| drawRow row
@@ -216,12 +218,11 @@ let grid1 : List<List<IDraw>> =
         v ] ]
 
 let rec solver grid =
-  let orig = grid
   let g = solveGrid grid
-  if (g = orig) then
+  if (g = grid) then
     g
   else
-    printf "%s" <| drawGrid g
+    drawGrid g |> printf "%s"
     solver g
 
 [<EntryPoint>]
@@ -230,5 +231,4 @@ let main argv =
     |> solver
     |> drawGrid
     |> printf "%s"
-
     0 // return an integer exit code
