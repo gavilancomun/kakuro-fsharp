@@ -63,8 +63,7 @@ let drawRow (row : List<IDraw>) =
 
 let drawGrid grid = 
     "\n" + 
-    (grid
-    |> List.map (fun row -> drawRow (row))
+    (List.map (fun row -> drawRow (row)) grid
     |> String.concat "")
 
 let allDifferent (nums : List<int>) = (nums.Length = (set nums).Count)
@@ -83,9 +82,9 @@ let permuteAll vs total = permute vs total []
 let isPossible (cell : Value) n = Set.contains n cell.values
 
 let rec transpose matrix = 
-    match matrix with // matrix is a list<list<int>>
+    match matrix with // matrix is a list<list<T>>
     | row :: rows -> // case when the list of rows is non-empty
-        match row with // rows is a list<int>
+        match row with // rows is a list<T>
         | col :: cols -> // case when the row is non-empty
             // Take first elements from all rows of the matrix
             let first = List.map List.head matrix
