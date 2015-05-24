@@ -100,26 +100,26 @@ let solveStep (cells : List<Value>, total : int) =
 
 let solvePairRow pair = 
     match pair with
+    | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        solveStep (vs |> List.map (fun x -> x :?> Value), 
+        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value), 
                    match Seq.last nvs with
                    | :? Across as x -> x.across
                    | :? DownAcross as x -> x.across
-                   | _ -> 0)
-        |> List.map (fun x -> x :> IDraw)
+                   | _ -> 0) |> List.map (fun x -> x :> IDraw))
     | _ -> []
 
 let solvePairCol pair = 
     match pair with
+    | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
     | [ nvs : List<IDraw>; vs ] -> 
-        solveStep (vs |> List.map (fun x -> x :?> Value), 
+        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value), 
                    match Seq.last nvs with
                    | :? Down as x -> x.down
                    | :? DownAcross as x -> x.down
-                   | _ -> 0)
-        |> List.map (fun x -> x :> IDraw)
+                   | _ -> 0) |> List.map (fun x -> x :> IDraw))
     | _ -> []
 
 let rec partitionBy (f, coll) = 
@@ -160,12 +160,18 @@ let solveRow row =
 let solveCol col = 
     partitionN (2, partitionBy ((fun (x : IDraw) -> x :? Value), col)) |> List.collect (fun p -> solvePairCol p)
 
+let peekRow(row) =
+    printf "%s" <| drawRow row
+    row
+
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
     |> List.map solveRow
+    |> List.map peekRow
     |> transpose
     |> List.map solveCol
     |> transpose
+    |> List.map peekRow
 
 let grid1 : List<List<IDraw>> = 
     [ [ e
@@ -207,7 +213,6 @@ let grid1 : List<List<IDraw>> =
 
 [<EntryPoint>]
 let main argv = 
-    printf "%s" <| drawGrid grid1
     grid1 
     |> solveGrid
     |> drawGrid
