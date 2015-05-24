@@ -47,6 +47,8 @@ type Value(values : Set<int>) =
         | :? Value as v -> values = v.values
         | _ -> false
 
+    override x.GetHashCode() = values.GetHashCode()
+
 let a (across : int) = Across(across)
 let d (down : int) = Down(down)
 let da (down : int, across : int) = DownAcross(down, across)
@@ -142,11 +144,11 @@ let rec partitionBy (f, coll) =
                             |> Seq.skip run.Length
                             |> Seq.toList)
 
-let rec drop(n, coll) =
+let rec drop n coll =
   match coll with
   | [] -> []
   | x::xs when (n <= 1) -> xs
-  | x::xs -> drop((n - 1), xs)
+  | x::xs -> drop (n - 1) xs
 
 let rec partitionAll (n, step, coll) = 
     match coll with
@@ -157,7 +159,7 @@ let rec partitionAll (n, step, coll) =
                       |> Seq.toList
             seg :: partitionAll (n, step, 
                                  coll
-                                 |> (fun coll -> drop(step, coll))
+                                 |> drop step
                                  |> Seq.toList)
 
 let partitionN (n, coll) = partitionAll (n, n, coll)
