@@ -130,7 +130,7 @@ let solvePairCol pair =
                    | _ -> 0) |> List.map (fun x -> x :> IDraw))
     | _ -> []
 
-let rec partitionBy (f, coll) = 
+let rec partitionBy f coll = 
     match coll with
     | [] -> []
     | x :: xs -> 
@@ -139,10 +139,9 @@ let rec partitionBy (f, coll) =
             coll
             |> Seq.takeWhile (fun y -> fx = f y)
             |> Seq.toList
-        run :: partitionBy (f, 
-                            coll
-                            |> Seq.skip run.Length
-                            |> Seq.toList)
+        run :: partitionBy f (coll
+                              |> Seq.skip run.Length
+                              |> Seq.toList)
 
 let rec drop n coll =
   match coll with
@@ -165,10 +164,10 @@ let rec partitionAll (n, step, coll) =
 let partitionN n coll = partitionAll (n, n, coll)
 
 let solveRow cells = 
-    partitionN 2 <| partitionBy ((fun (x : IDraw) -> x :? Value), cells) |> List.collect solvePairRow
+    partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairRow
 
 let solveCol cells = 
-    partitionN 2 <| partitionBy ((fun (x : IDraw) -> x :? Value), cells) |> List.collect solvePairCol
+    partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairCol
 
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
