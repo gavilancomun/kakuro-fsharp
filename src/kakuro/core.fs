@@ -31,7 +31,7 @@ type Value(values : Set<int>) =
         member __.draw() = 
             if 1 = values.Count then 
                 values
-                |> Set.map (fun x -> "    " + x.ToString() + "    ")
+                |> Set.map (fun x -> "     " + x.ToString() + "    ")
                 |> String.concat ""
             else 
                 " " + ([ 1..9 ]
@@ -41,6 +41,11 @@ type Value(values : Set<int>) =
                        |> String.concat "")
     
     member __.values = values
+
+    override x.Equals(y) =
+        match y with
+        | :? Value as v -> values = v.values
+        | _ -> false
 
 let a (across : int) = Across(across)
 let d (down : int) = Down(down)
@@ -55,9 +60,10 @@ let drawRow (row : List<IDraw>) =
     + "\n"
 
 let drawGrid (grid : List<List<IDraw>>) = 
-    grid
+    "\n" + 
+    (grid
     |> List.map (fun row -> drawRow (row))
-    |> String.concat ""
+    |> String.concat "")
 
 let allDifferent (nums : List<int>) = (nums.Length = (set nums).Count)
 
@@ -167,11 +173,9 @@ let peekRow(row) =
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
     |> List.map solveRow
-    |> List.map peekRow
     |> transpose
     |> List.map solveCol
     |> transpose
-    |> List.map peekRow
 
 let grid1 : List<List<IDraw>> = 
     [ [ e
@@ -211,10 +215,19 @@ let grid1 : List<List<IDraw>> =
         v
         v ] ]
 
+let rec solver grid =
+  let orig = grid
+  let g = solveGrid grid
+  if (g = orig) then
+    g
+  else
+    printf "%s" <| drawGrid g
+    solver g
+
 [<EntryPoint>]
 let main argv = 
     grid1 
-    |> solveGrid
+    |> solver
     |> drawGrid
     |> printf "%s"
 
