@@ -97,11 +97,9 @@ let rec transpose matrix =
 
 let solveStep (cells : List<Value>) total = 
     let final = cells.Length - 1
-    let perms = 
-        permuteAll cells total
-        |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
-        |> List.filter allDifferent
-    perms
+    permuteAll cells total
+    |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
+    |> List.filter allDifferent
     |> transpose
     |> List.map (fun p -> Value(set p))
 
