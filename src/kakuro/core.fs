@@ -8,21 +8,18 @@ type Empty() =
         member __.draw() = "   -----  "
 
 type Down(down : int) = 
-    
     interface IDraw with
         member __.draw() = sprintf "   %2d\\--  " down
     
     member __.down = down
 
 type Across(across : int) = 
-    
     interface IDraw with
         member __.draw() = sprintf "   --\\%2d  " across
     
     member __.across = across
 
 type DownAcross(down : int, across : int) = 
-    
     interface IDraw with
         member __.draw() = sprintf "   %2d\\%2d  " down across
     
@@ -30,7 +27,6 @@ type DownAcross(down : int, across : int) =
     member __.across = across
 
 type Value(values : Set<int>) = 
-    
     interface IDraw with
         member __.draw() = 
             if 1 = values.Count then 
@@ -63,7 +59,7 @@ let drawGrid (grid : List<List<IDraw>>) =
     |> List.map (fun row -> drawRow (row))
     |> String.concat ""
 
-let allDifferent (nums : List<int>) = nums.Length = (set nums).Count
+let allDifferent (nums : List<int>) = (nums.Length = (set nums).Count)
 
 let rec permute (vs : List<Value>, target : int, soFar : List<int>) = 
     if target >= 1 then 
@@ -131,9 +127,8 @@ let rec partitionBy (f, coll) =
     | [] -> []
     | x :: xs -> 
         let fx = f x
-        
         let run = 
-            x :: xs
+            coll
             |> Seq.takeWhile (fun y -> fx = f y)
             |> Seq.toList
         run :: partitionBy (f, 
@@ -141,19 +136,22 @@ let rec partitionBy (f, coll) =
                             |> Seq.skip run.Length
                             |> Seq.toList)
 
+let rec drop(n, coll) =
+  match coll with
+  | [] -> []
+  | x::xs when (n <= 1) -> xs
+  | x::xs -> drop((n - 1), xs)
+
 let rec partitionAll (n, step, coll) = 
     match coll with
     | [] -> []
     | x :: xs -> 
-        if coll.Length < n then [ coll ]
-        else 
-            let seg = 
-                coll
-                |> Seq.take n
-                |> Seq.toList
+            let seg = coll
+                      |> Seq.truncate n
+                      |> Seq.toList
             seg :: partitionAll (n, step, 
                                  coll
-                                 |> Seq.skip step
+                                 |> (fun coll -> drop(step, coll))
                                  |> Seq.toList)
 
 let partitionN (n, coll) = partitionAll (n, n, coll)
@@ -164,9 +162,9 @@ let solveCol col =
 
 let solveGrid (grid : List<List<IDraw>>) = 
     grid
-    |> List.collect solveRow
+    |> List.map solveRow
     |> transpose
-    |> List.collect solveCol
+    |> List.map solveCol
     |> transpose
 
 let grid1 : List<List<IDraw>> = 
@@ -210,5 +208,9 @@ let grid1 : List<List<IDraw>> =
 [<EntryPoint>]
 let main argv = 
     printf "%s" <| drawGrid grid1
-    solveGrid grid1
+    grid1 
+    |> solveGrid
+    |> drawGrid
+    |> printf "%s"
+
     0 // return an integer exit code
