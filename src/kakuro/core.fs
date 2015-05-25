@@ -1,11 +1,11 @@
 module Kakuro.Core
 
 type Cell = 
-| Empty
-| Down of down: int
-| Across of across: int
-| DownAcross of down:int * across: int
-| Value of values : Set<int>
+  | Empty
+  | Down of down: int
+  | Across of across: int
+  | DownAcross of down: int * across: int
+  | Value of values: Set<int>
 
 let draw cell = 
   match cell with
@@ -29,16 +29,11 @@ let da down across = DownAcross(down, across)
 let e = Empty
 let v = Value(set [ 1..9 ])
 
-let drawRow (row : Cell list) = 
-    (row
-     |> List.map draw
-     |> String.concat "")
-    + "\n"
+let drawRow row = 
+    (row |> List.map draw |> String.concat "") + "\n"
 
 let drawGrid grid = 
-    "\n" + 
-    (List.map (fun row -> drawRow (row)) grid
-    |> String.concat "")
+    "\n" + (grid |> List.map drawRow |> String.concat "")
 
 let allDifferent (nums : int list) = (nums.Length = (set nums).Count)
 
@@ -46,7 +41,7 @@ let rec permute (vs : Cell list) target (soFar: int list) =
     if target >= 1 then 
         if soFar.Length = (vs.Length - 1) then [ soFar @ [ target ] ]
         else 
-            let c = List.nth vs soFar.Length
+            let c = vs.[soFar.Length]
             match c with
             | Value values -> values
                               |> Seq.collect (fun v -> permute vs (target - v) (soFar @ [ v ]))
@@ -77,7 +72,7 @@ let rec transpose matrix =
 let solveStep (cells : Cell list) total = 
     let final = cells.Length - 1
     permuteAll cells total
-    |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
+    |> List.filter (fun p -> isPossible cells.[final] p.[final])
     |> List.filter allDifferent
     |> transpose
     |> List.map (fun p -> Value(set p))
@@ -86,24 +81,24 @@ let solvePairRow pair =
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : Cell list; vs ] -> 
+    | [ nvs; vs ] -> 
         nvs @ (solveStep vs 
-                   (match Seq.last nvs with
-                   | Across n -> n
-                   | DownAcross (d, a) -> a
-                   | _ -> 0))
+                   <| match Seq.last nvs with
+                      | Across n -> n
+                      | DownAcross (d, a) -> a
+                      | _ -> 0)
     | _ -> []
 
 let solvePairCol pair = 
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : Cell list; vs ] -> 
+    | [ nvs; vs ] -> 
         nvs @ (solveStep vs
-                   (match Seq.last nvs with
-                   | Down d -> d
-                   | DownAcross (d, a) -> d
-                   | _ -> 0))
+                   <| match Seq.last nvs with
+                      | Down d -> d
+                      | DownAcross (d, a) -> d
+                      | _ -> 0)
     | _ -> []
 
 let rec partitionBy f coll = 
@@ -129,16 +124,16 @@ let rec partitionAll n step coll =
     match coll with
     | [] -> []
     | x :: xs -> 
-            let seg = Seq.truncate n coll |> Seq.toList
-            seg :: partitionAll n step (coll |> drop step |> Seq.toList)
+        let seg = Seq.truncate n coll |> Seq.toList
+        seg :: partitionAll n step (coll |> drop step)
 
 let partitionN n coll = partitionAll n n coll
 
 let solveRow cells = 
-    partitionN 2 <| partitionBy (fun (x : Cell) -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairRow
+    partitionN 2 <| partitionBy (fun x -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairRow
 
 let solveCol cells = 
-    partitionN 2 <| partitionBy (fun (x : Cell) -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairCol
+    partitionN 2 <| partitionBy (fun x -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairCol
 
 let solveGrid grid = 
     grid
@@ -148,12 +143,7 @@ let solveGrid grid =
     |> transpose
 
 let grid1 : Cell list list = 
-    [ [ e
-        (d 4)
-        (d 22)
-        e
-        (d 16)
-        (d 3) ]
+    [ [ e; (d 4); (d 22); e; (d 16); (d 3) ]
       [ (a 3)
         v
         v
