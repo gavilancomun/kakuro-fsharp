@@ -1,69 +1,37 @@
 module Kakuro.Core
 
-type IDraw = interface
-    abstract draw : unit -> string
-end
+type Cell = 
+| Empty
+| Down of down: int
+| Across of across: int
+| DownAcross of down:int * across: int
+| Value of values : Set<int>
 
-type Empty = struct
-    interface IDraw with
-        member __.draw() = "   -----  "
-end
-
-type Down(down : int) = class
-    interface IDraw with
-        member __.draw() = sprintf "   %2d\\--  " down
-    
-    member __.down() = down
-end
-
-type Across(across : int) = class
-    interface IDraw with
-        member __.draw() = sprintf "   --\\%2d  " across
-    
-    member __.across() = across
-end
-
-type DownAcross(down : int, across : int) = class
-    interface IDraw with
-        member __.draw() = sprintf "   %2d\\%2d  " down across
-    
-    member __.down() = down
-    member __.across() = across
-end
-
-type Value(values : Set<int>) = class
-    interface IDraw with
-        member __.draw() = 
-            if 1 = values.Count then 
-                values
-                |> Set.map (fun x -> "     " + x.ToString() + "    ")
-                |> String.concat ""
-            else 
-                " " + ([ 1..9 ]
-                       |> List.map (fun x -> 
-                              if Set.contains x values then x.ToString()
-                              else ".")
-                       |> String.concat "")
-    
-    member __.values = values
-
-    override x.Equals(y) =
-        match y with
-        | :? Value as v -> values = v.values
-        | _ -> false
-
-    override x.GetHashCode() = values.GetHashCode()
-end
+let draw cell = 
+  match cell with
+  | Empty -> "   -----  "
+  | Down n -> sprintf "   %2d\\--  " n
+  | Across n -> sprintf "   --\\%2d  " n
+  | DownAcross (down, across) -> sprintf "   %2d\\%2d  " down across
+  | Value values -> 
+      if 1 = values.Count then 
+        values
+        |> Set.map (fun x -> "     " + x.ToString() + "    ")
+        |> String.concat ""
+      else 
+         " " + ([ 1..9 ]
+         |> List.map (fun x -> if Set.contains x values then x.ToString() else ".")
+         |> String.concat "")
 
 let a across = Across(across)
 let d down = Down(down)
 let da down across = DownAcross(down, across)
-let e = Empty()
+let e = Empty
 let v = Value(set [ 1..9 ])
 
-let drawRow (row : IDraw list) = 
+let drawRow (row : Cell list) = 
     (row
-     |> List.map (fun x -> x.draw())
+     |> List.map draw
      |> String.concat "")
     + "\n"
 
@@ -74,18 +42,23 @@ let drawGrid grid =
 
 let allDifferent (nums : int list) = (nums.Length = (set nums).Count)
 
-let rec permute (vs : Value list) target (soFar: int list) = 
+let rec permute (vs : Cell list) target (soFar: int list) = 
     if target >= 1 then 
         if soFar.Length = (vs.Length - 1) then [ soFar @ [ target ] ]
         else 
-            (List.nth vs soFar.Length).values
-            |> Seq.collect (fun v -> permute vs (target - v) (soFar @ [ v ]))
-            |> List.ofSeq
+            let c = List.nth vs soFar.Length
+            match c with
+            | Value values -> values
+                              |> Seq.collect (fun v -> permute vs (target - v) (soFar @ [ v ]))
+                              |> List.ofSeq
+            | _ -> []
     else []
 
 let permuteAll vs total = permute vs total []
 
-let isPossible (cell : Value) n = Set.contains n cell.values
+let isPossible cell n = match cell with
+                        | Value values -> Set.contains n values
+                        | _ -> false
 
 let rec transpose matrix = 
     match matrix with // matrix is a list<list<T>>
@@ -101,7 +74,7 @@ let rec transpose matrix =
         | _ -> []
     | _ -> []
 
-let solveStep (cells : Value list) total = 
+let solveStep (cells : Cell list) total = 
     let final = cells.Length - 1
     permuteAll cells total
     |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
@@ -113,24 +86,24 @@ let solvePairRow pair =
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : IDraw list; vs ] -> 
-        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
+    | [ nvs : Cell list; vs ] -> 
+        nvs @ (solveStep vs 
                    (match Seq.last nvs with
-                   | :? Across as x -> x.across()
-                   | :? DownAcross as x -> x.across()
-                   | _ -> 0) |> List.map (fun x -> x :> IDraw))
+                   | Across n -> n
+                   | DownAcross (d, a) -> a
+                   | _ -> 0))
     | _ -> []
 
 let solvePairCol pair = 
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : IDraw list; vs ] -> 
-        nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
+    | [ nvs : Cell list; vs ] -> 
+        nvs @ (solveStep vs
                    (match Seq.last nvs with
-                   | :? Down as x -> x.down()
-                   | :? DownAcross as x -> x.down()
-                   | _ -> 0) |> List.map (fun x -> x :> IDraw))
+                   | Down d -> d
+                   | DownAcross (d, a) -> d
+                   | _ -> 0))
     | _ -> []
 
 let rec partitionBy f coll = 
@@ -162,10 +135,10 @@ let rec partitionAll n step coll =
 let partitionN n coll = partitionAll n n coll
 
 let solveRow cells = 
-    partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairRow
+    partitionN 2 <| partitionBy (fun (x : Cell) -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairRow
 
 let solveCol cells = 
-    partitionN 2 <| partitionBy (fun (x : IDraw) -> x :? Value) cells |> List.collect solvePairCol
+    partitionN 2 <| partitionBy (fun (x : Cell) -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairCol
 
 let solveGrid grid = 
     grid
@@ -174,7 +147,7 @@ let solveGrid grid =
     |> List.map solveCol
     |> transpose
 
-let grid1 : IDraw list list = 
+let grid1 : Cell list list = 
     [ [ e
         (d 4)
         (d 22)
