@@ -1,32 +1,37 @@
 module Kakuro.Core
 
-type IDraw = 
+type IDraw = interface
     abstract draw : unit -> string
+end
 
-type Empty() = 
+type Empty = struct
     interface IDraw with
         member __.draw() = "   -----  "
+end
 
-type Down(down : int) = 
+type Down(down : int) = class
     interface IDraw with
         member __.draw() = sprintf "   %2d\\--  " down
     
-    member __.down = down
+    member __.down() = down
+end
 
-type Across(across : int) = 
+type Across(across : int) = class
     interface IDraw with
         member __.draw() = sprintf "   --\\%2d  " across
     
-    member __.across = across
+    member __.across() = across
+end
 
-type DownAcross(down : int, across : int) = 
+type DownAcross(down : int, across : int) = class
     interface IDraw with
         member __.draw() = sprintf "   %2d\\%2d  " down across
     
-    member __.down = down
-    member __.across = across
+    member __.down() = down
+    member __.across() = across
+end
 
-type Value(values : Set<int>) = 
+type Value(values : Set<int>) = class
     interface IDraw with
         member __.draw() = 
             if 1 = values.Count then 
@@ -48,6 +53,7 @@ type Value(values : Set<int>) =
         | _ -> false
 
     override x.GetHashCode() = values.GetHashCode()
+end
 
 let a across = Across(across)
 let d down = Down(down)
@@ -55,7 +61,7 @@ let da down across = DownAcross(down, across)
 let e = Empty()
 let v = Value(set [ 1..9 ])
 
-let drawRow (row : List<IDraw>) = 
+let drawRow (row : IDraw list) = 
     (row
      |> List.map (fun x -> x.draw())
      |> String.concat "")
@@ -66,9 +72,9 @@ let drawGrid grid =
     (List.map (fun row -> drawRow (row)) grid
     |> String.concat "")
 
-let allDifferent (nums : List<int>) = (nums.Length = (set nums).Count)
+let allDifferent (nums : int list) = (nums.Length = (set nums).Count)
 
-let rec permute (vs : List<Value>) target (soFar: List<int>) = 
+let rec permute (vs : Value list) target (soFar: int list) = 
     if target >= 1 then 
         if soFar.Length = (vs.Length - 1) then [ soFar @ [ target ] ]
         else 
@@ -95,7 +101,7 @@ let rec transpose matrix =
         | _ -> []
     | _ -> []
 
-let solveStep (cells : List<Value>) total = 
+let solveStep (cells : Value list) total = 
     let final = cells.Length - 1
     permuteAll cells total
     |> List.filter (fun p -> isPossible (List.nth cells final) (List.nth p final))
@@ -107,11 +113,11 @@ let solvePairRow pair =
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : List<IDraw>; vs ] -> 
+    | [ nvs : IDraw list; vs ] -> 
         nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
                    (match Seq.last nvs with
-                   | :? Across as x -> x.across
-                   | :? DownAcross as x -> x.across
+                   | :? Across as x -> x.across()
+                   | :? DownAcross as x -> x.across()
                    | _ -> 0) |> List.map (fun x -> x :> IDraw))
     | _ -> []
 
@@ -119,11 +125,11 @@ let solvePairCol pair =
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs : List<IDraw>; vs ] -> 
+    | [ nvs : IDraw list; vs ] -> 
         nvs @ (solveStep (vs |> List.map (fun x -> x :?> Value)) 
                    (match Seq.last nvs with
-                   | :? Down as x -> x.down
-                   | :? DownAcross as x -> x.down
+                   | :? Down as x -> x.down()
+                   | :? DownAcross as x -> x.down()
                    | _ -> 0) |> List.map (fun x -> x :> IDraw))
     | _ -> []
 
@@ -168,7 +174,7 @@ let solveGrid grid =
     |> List.map solveCol
     |> transpose
 
-let grid1 : List<List<IDraw>> = 
+let grid1 : IDraw list list = 
     [ [ e
         (d 4)
         (d 22)
