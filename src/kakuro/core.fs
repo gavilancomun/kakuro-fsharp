@@ -31,10 +31,10 @@ let e = Empty
 let v = Value(set [ 1..9 ])
 
 let drawRow row = 
-    (row |> List.map draw |> String.concat "") + "\n"
+    (List.map draw row |> String.concat "") + "\n"
 
 let drawGrid grid = 
-    "\n" + (grid |> List.map drawRow |> String.concat "")
+    "\n" + (List.map drawRow grid |> String.concat "")
 
 let allDifferent (nums : int list) = (nums.Length = (set nums).Count)
 
@@ -51,9 +51,10 @@ let rec permute (vs : Cell list) target (soFar: int list) =
 
 let permuteAll vs total = permute vs total []
 
-let isPossible cell n = match cell with
-                        | Value values -> Set.contains n values
-                        | _ -> false
+let isPossible cell n =
+    match cell with
+    | Value values -> Set.contains n values
+    | _ -> false
 
 let rec transpose matrix = 
     match matrix with
@@ -77,30 +78,28 @@ let solveStep (cells : Cell list) total =
     |> transpose
     |> List.map (fun p -> Value(set p))
 
-let solvePairRow pair = 
+let rowTarget cell = 
+    match cell with
+    | Across n -> n
+    | DownAcross (d, a) -> a
+    | _ -> 0
+
+let colTarget cell =
+    match cell with
+    | Down d -> d
+    | DownAcross (d, a) -> d
+    | _ -> 0
+
+let solvePair f pair = 
     match pair with
     | [nvs] -> nvs
     | [ nvs; [] ] -> nvs
-    | [ nvs; vs ] -> 
-        nvs @ (solveStep vs 
-                         <| match Seq.last nvs with
-                            | Across n -> n
-                            | DownAcross (d, a) -> a
-                            | _ -> 0)
+    | [ nvs; vs ] -> nvs @ (solveStep vs (nvs |> Seq.last |> f))
     | _ -> []
 
-let solvePairCol pair = 
-    match pair with
-    | [nvs] -> nvs
-    | [ nvs; [] ] -> nvs
-    | [ nvs; vs ] -> 
-        nvs @ (solveStep vs
-                         <| match Seq.last nvs with
-                            | Down d -> d
-                            | DownAcross (d, a) -> d
-                            | _ -> 0)
-    | _ -> []
+let solvePairRow = solvePair rowTarget
 
+let solvePairCol = solvePair colTarget
 
 let rec drop n coll =
   match coll with
@@ -121,7 +120,7 @@ let rec partitionAll n step coll =
     | [] -> []
     | x :: xs -> 
         let seg = Seq.truncate n coll |> Seq.toList
-        seg :: partitionAll n step (coll |> drop step)
+        seg :: partitionAll n step (drop step coll)
 
 let partitionN n coll = partitionAll n n coll
 
@@ -130,8 +129,8 @@ let isValue cell =
   | Value vs -> true
   | _ -> false
 
-let solveLine solver cells =
-    partitionN 2 <| partitionBy isValue cells |> List.collect solver
+let solveLine f cells =
+    partitionN 2 <| partitionBy isValue cells |> List.collect f
 
 let solveRow = solveLine solvePairRow
 
@@ -179,16 +178,13 @@ let grid1 : Cell list list =
 
 let rec solver grid =
   let g = solveGrid grid
-  if (g = grid) then
-    g
+  if g = grid then
+    grid
   else
     drawGrid g |> printf "%s"
     solver g
 
 [<EntryPoint>]
 let main _ = 
-    grid1 
-    |> solver
-    |> drawGrid
-    |> printf "%s"
+    let result = solver grid1
     0 // return an integer exit code
