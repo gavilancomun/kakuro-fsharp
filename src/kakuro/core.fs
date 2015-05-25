@@ -19,7 +19,8 @@ let draw cell =
         |> Set.map (fun x -> "     " + x.ToString() + "    ")
         |> String.concat ""
       else 
-         " " + ([ 1..9 ]
+         " " +
+         ([ 1..9 ]
          |> List.map (fun x -> if Set.contains x values then x.ToString() else ".")
          |> String.concat "")
 
@@ -41,8 +42,7 @@ let rec permute (vs : Cell list) target (soFar: int list) =
     if target >= 1 then 
         if soFar.Length = (vs.Length - 1) then [ soFar @ [ target ] ]
         else 
-            let c = vs.[soFar.Length]
-            match c with
+            match vs.[soFar.Length] with
             | Value values -> values
                               |> Seq.collect (fun v -> permute vs (target - v) (soFar @ [ v ]))
                               |> List.ofSeq
@@ -56,15 +56,15 @@ let isPossible cell n = match cell with
                         | _ -> false
 
 let rec transpose matrix = 
-    match matrix with // matrix is a list<list<T>>
-    | row :: rows -> // case when the list of rows is non-empty
-        match row with // rows is a list<T>
-        | col :: cols -> // case when the row is non-empty
+    match matrix with
+    | row :: rows ->
+        match row with
+        | col :: cols ->
             // Take first elements from all rows of the matrix
             let first = List.map List.head matrix
             // Take remaining elements from all rows of the matrix
             // and then transpose the resulting matrix
-            let rest = transpose (List.map List.tail matrix)
+            let rest = matrix |> List.map List.tail |> transpose
             first :: rest
         | _ -> []
     | _ -> []
@@ -83,10 +83,10 @@ let solvePairRow pair =
     | [ nvs; [] ] -> nvs
     | [ nvs; vs ] -> 
         nvs @ (solveStep vs 
-                   <| match Seq.last nvs with
-                      | Across n -> n
-                      | DownAcross (d, a) -> a
-                      | _ -> 0)
+                         <| match Seq.last nvs with
+                            | Across n -> n
+                            | DownAcross (d, a) -> a
+                            | _ -> 0)
     | _ -> []
 
 let solvePairCol pair = 
@@ -95,30 +95,26 @@ let solvePairCol pair =
     | [ nvs; [] ] -> nvs
     | [ nvs; vs ] -> 
         nvs @ (solveStep vs
-                   <| match Seq.last nvs with
-                      | Down d -> d
-                      | DownAcross (d, a) -> d
-                      | _ -> 0)
+                         <| match Seq.last nvs with
+                            | Down d -> d
+                            | DownAcross (d, a) -> d
+                            | _ -> 0)
     | _ -> []
 
-let rec partitionBy f coll = 
-    match coll with
-    | [] -> []
-    | x :: xs -> 
-        let fx = f x
-        let run = 
-            coll
-            |> Seq.takeWhile (fun y -> fx = f y)
-            |> Seq.toList
-        run :: partitionBy f (coll
-                              |> Seq.skip run.Length
-                              |> Seq.toList)
 
 let rec drop n coll =
   match coll with
   | [] -> []
   | x :: xs when (n <= 1) -> xs
   | x :: xs -> drop (n - 1) xs
+
+let rec partitionBy f coll = 
+    match coll with
+    | [] -> []
+    | x :: xs -> 
+        let fx = f x
+        let run = Seq.takeWhile (fun y -> fx = f y) coll |> Seq.toList
+        run :: partitionBy f (drop run.Length coll)
 
 let rec partitionAll n step coll = 
     match coll with
@@ -129,11 +125,17 @@ let rec partitionAll n step coll =
 
 let partitionN n coll = partitionAll n n coll
 
-let solveRow cells = 
-    partitionN 2 <| partitionBy (fun x -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairRow
+let isValue cell = 
+  match cell with
+  | Value vs -> true
+  | _ -> false
 
-let solveCol cells = 
-    partitionN 2 <| partitionBy (fun x -> match x with | Value vs -> true | _ -> false) cells |> List.collect solvePairCol
+let solveLine solver cells =
+    partitionN 2 <| partitionBy isValue cells |> List.collect solver
+
+let solveRow = solveLine solvePairRow
+
+let solveCol = solveLine solvePairCol
 
 let solveGrid grid = 
     grid
