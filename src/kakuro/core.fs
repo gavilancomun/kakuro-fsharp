@@ -92,9 +92,8 @@ let colTarget cell =
 
 let solvePair f pair = 
     match pair with
-    | [nvs] -> nvs
-    | [ nvs; [] ] -> nvs
     | [ nvs; vs ] -> nvs @ (solveStep vs (nvs |> Seq.last |> f))
+    | [nvs] -> nvs
     | _ -> []
 
 let solvePairRow = solvePair rowTarget
